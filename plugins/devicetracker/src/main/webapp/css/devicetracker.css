@@ -1,0 +1,75 @@
+.route-marker {
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+.route-marker.start div {
+    border-color: #4CAF50 !important;
+}
+
+.route-marker.end div {
+    border-color: #F44336 !important;
+}
+
+#devicemap {
+    height: 500px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.leaflet-popup-content {
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.leaflet-popup-content strong {
+    color: #2196F3;
+}
+
+/* Стили для точек стоянки */
+.stop-point {
+    background-color: #FFA000;
+    border: 2px solid white;
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 50%;
+    margin-left: 2px;
+    margin-top: 2px;
+}
+
+.stop-marker {
+    background: transparent;
+}
+
+.stop-zone-popup {
+    padding: 5px;
+}
+
+.stop-zone-popup strong {
+    color: #FFA000;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* Пульсация для зон стоянки */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.4;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+}
+
+.leaflet-interactive {
+    animation: pulse 2s infinite;
+}

@@ -22,8 +22,11 @@ if [ "$HTTP_REDIRECT" = "1" ]; then
 	/sbin/iptables -D PREROUTING -t nat -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 8080
 fi
 
+# Create SSL directory if it doesn't exist and set permissions
 if [ ! -d $SSL_DIR ]; then
     mkdir -p $SSL_DIR
+    chown $TOMCAT_USER:$TOMCAT_USER $SSL_DIR
+    chmod 755 $SSL_DIR
 fi
 
 certbot certonly --agree-tos --no-eff-email --standalone --force-renewal -d $DOMAIN

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="TemplateMapper">
+    
+    <!-- Базовый запрос для шаблонов -->
+    <sql id="templateColumns">
+        SELECT t.id, t.customer_id, t.name, t.description, t.active,
+               t.settings_json, t.apply_mode, t.created_at, t.updated_at
+        FROM plugin_settings_templates t
+        WHERE t.customer_id = #{customerId}
+    </sql>
+
+    <!-- Получение всех шаблонов -->
+    <select id="getAllTemplates" resultType="com.hmdm.plugins.settings.model.SettingsTemplate">
+        <include refid="templateColumns"/>
+        ORDER BY t.name
+    </select>
+
+    <!-- Получение шаблона по ID -->
+    <select id="getTemplate" parameterType="long" 
+            resultType="com.hmdm.plugins.settings.model.SettingsTemplate">
+        <include refid="templateColumns"/>
+        AND t.id = #{id}
+    </select>
+
+    <!-- Получение шаблонов для устройства -->
+    <select id="getTemplatesForDevice" parameterType="long" 
+            resultType="com.hmdm.plugins.settings.model.SettingsTemplate">
+        <include refid="templateColumns"/>
+        AND EXISTS (
+            SELECT 1 FROM plugin_settings_template_devices td 
+            WHERE td.template_id = t.id AND td.device_id = #{deviceId}
+        )
+        AND t.active = true
+        ORDER BY t.name
+    </select>
+
+    <!-- Получение шаблонов для группы -->
+    <select id="getTemplatesForGroup" parameterType="long" 
+            resultType="com.hmdm.plugins.settings.model.SettingsTemplate">
+        <include refid="templateColumns"/>
+        AND EXISTS (
+            SELECT 1 FROM plugin_settings_template_groups tg 
+            WHERE tg.template_id = t.id AND tg.group_id = #{groupId}
+        )
+        AND t.active = true
+        ORDER BY t.name
+    </select>
+
+    <!-- Получение шаблонов для конфигурации -->
+    <select id="getTemplatesForConfiguration" parameterType="long" 
+            resultType="com.hmdm.plugins.settings.model.SettingsTemplate">
+        <include refid="templateColumns"/>
+        AND EXISTS (
+            SELECT 1 FROM plugin_settings_template_configurations tc 
+            WHERE tc.template_id = t.id AND tc.configuration_id = #{configurationId}
+        )
+        AND t.active = true
+        ORDER BY t.name
+    </select>
+
+    <!-- Добавление шаблона -->
+    <insert id="insertTemplate" 
+            parameterType="com.hmdm.plugins.settings.model.SettingsTemplate"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO plugin_settings_templates
+            (customer_id, name, description, active, settings_json, 
+             apply_mode, created_at)
+        VALUES
+            (#{customerId}, #{name}, #{description}, #{active}, #{settingsJson},
+             #{applyMode}, #{createdAt})
+    </insert>
+
+    <!-- Обновление шаблона -->
+    <update id="updateTemplate" 
+            parameterType="com.hmdm.plugins.settings.model.SettingsTemplate">
+        UPDATE plugin_settings_templates
+        SET name = #{name},
+            description = #{description},
+            active = #{active},
+            settings_json = #{settingsJson},
+            apply_mode = #{applyMode},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+        AND customer_id = #{customerId}
+    </update>
+
+    <!-- Удаление шаблона -->
+    <delete id="deleteTemplate" parameterType="long">
+        DELETE FROM plugin_settings_templates
+        WHERE id = #{id}
+        AND customer_id = #{customerId}
+    </delete>
+
+    <!-- Управление связями -->
+    <delete id="deleteDeviceLinks" parameterType="long">
+        DELETE FROM plugin_settings_template_devices
+        WHERE template_id = #{templateId}
+    </delete>
+
+    <insert id="insertDeviceLinks" parameterType="map">
+        INSERT INTO plugin_settings_template_devices (template_id, device_id, created_at)
+        VALUES
+        <foreach collection="targetIds" item="deviceId" separator=",">
+            (#{templateId}, #{deviceId}, #{createdAt})
+        </foreach>
+    </insert>
+
+    <delete id="deleteGroupLinks" parameterType="long">
+        DELETE FROM plugin_settings_template_groups
+        WHERE template_id = #{templateId}
+    </delete>
+
+    <insert id="insertGroupLinks" parameterType="map">
+        INSERT INTO plugin_settings_template_groups (template_id, group_id, created_at)
+        VALUES
+        <foreach collection="targetIds" item="groupId" separator=",">
+            (#{templateId}, #{groupId}, #{createdAt})
+        </foreach>
+    </insert>
+
+    <delete id="deleteConfigurationLinks" parameterType="long">
+        DELETE FROM plugin_settings_template_configurations
+        WHERE template_id = #{templateId}
+    </delete>
+
+    <insert id="insertConfigurationLinks" parameterType="map">
+        INSERT INTO plugin_settings_template_configurations 
+            (template_id, configuration_id, created_at)
+        VALUES
+        <foreach collection="targetIds" item="configId" separator=",">
+            (#{templateId}, #{configId}, #{createdAt})
+        </foreach>
+    </insert>
+</mapper>

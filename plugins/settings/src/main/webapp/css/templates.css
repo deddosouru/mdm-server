@@ -1,0 +1,50 @@
+.templates-container {
+    padding: 20px;
+}
+
+.toolbar {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-box {
+    flex: 0 0 300px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.templates-list {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.templates-list table {
+    margin-bottom: 0;
+}
+
+.btn-group {
+    display: flex;
+    gap: 5px;
+}
+
+.label {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.label-success {
+    background-color: #5cb85c;
+}
+
+.label-default {
+    background-color: #777;
+}

@@ -1,0 +1,120 @@
+.template-editor {
+    padding: 20px;
+    background: #f9f9f9;
+}
+
+.editor-header {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.template-info {
+    flex: 1;
+    padding-right: 20px;
+}
+
+.template-actions {
+    flex: 0 0 auto;
+}
+
+.template-actions .btn {
+    margin-left: 10px;
+}
+
+.editor-main {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.settings-grid {
+    padding: 15px;
+}
+
+.setting-row {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.setting-header {
+    margin-bottom: 10px;
+}
+
+.setting-header label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+}
+
+.setting-body {
+    margin-top: 10px;
+}
+
+.setting-validation {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #ddd;
+}
+
+.setting-validation .form-control {
+    margin-top: 5px;
+}
+
+/* Tabs стилизация */
+.nav-tabs {
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.nav-tabs > li > a {
+    border: none;
+    color: #555;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover,
+.nav-tabs > li.active > a:focus {
+    border: none;
+    border-bottom: 2px solid #2196F3;
+    color: #2196F3;
+}
+
+/* Форма стилизация */
+.form-control {
+    border-radius: 3px;
+}
+
+.input-lg {
+    font-size: 24px;
+    height: 46px;
+}
+
+/* Кнопки стилизация */
+.btn-group {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+
+/* Анимации */
+.setting-row {
+    transition: all 0.3s ease;
+}
+
+.setting-row:hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}

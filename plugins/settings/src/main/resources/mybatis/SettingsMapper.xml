@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SettingsMapper">
+    
+    <!-- Получение конфигураций устройства -->
+    <select id="getDeviceConfigs" parameterType="long" 
+            resultType="com.hmdm.plugins.settings.model.DeviceConfig">
+        SELECT * FROM plugin_settings_device_configs
+        WHERE device_id = #{deviceId}
+        AND customer_id = #{customerId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- Получение ожидающих применения конфигураций -->
+    <select id="getPendingConfigs" parameterType="long"
+            resultType="com.hmdm.plugins.settings.model.DeviceConfig">
+        SELECT * FROM plugin_settings_device_configs
+        WHERE device_id = #{deviceId}
+        AND customer_id = #{customerId}
+        AND status = 'PENDING'
+        ORDER BY created_at ASC
+    </select>
+
+    <!-- Добавление новой конфигурации -->
+    <insert id="insertConfig" 
+            parameterType="com.hmdm.plugins.settings.model.DeviceConfig"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO plugin_settings_device_configs
+            (device_id, customer_id, config_type, config_key, config_value, 
+             status, created_at)
+        VALUES
+            (#{deviceId}, #{customerId}, #{configType}, #{configKey}, #{configValue},
+             #{status}, #{createdAt})
+    </insert>
+
+    <!-- Обновление конфигурации -->
+    <update id="updateConfig" 
+            parameterType="com.hmdm.plugins.settings.model.DeviceConfig">
+        UPDATE plugin_settings_device_configs
+        SET config_value = #{configValue},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+        AND customer_id = #{customerId}
+    </update>
+
+    <!-- Обновление статуса конфигурации -->
+    <update id="updateConfigStatus" 
+            parameterType="com.hmdm.plugins.settings.model.DeviceConfig">
+        UPDATE plugin_settings_device_configs
+        SET status = #{status},
+            error_message = #{errorMessage},
+            updated_at = #{updatedAt},
+            applied_at = #{appliedAt}
+        WHERE id = #{id}
+        AND customer_id = #{customerId}
+    </update>
+
+    <!-- Получение шаблонов -->
+    <select id="getTemplates" resultType="com.hmdm.plugins.settings.model.ConfigTemplate">
+        SELECT * FROM plugin_settings_templates
+        WHERE customer_id = #{customerId}
+        ORDER BY name
+    </select>
+
+    <!-- Добавление шаблона -->
+    <insert id="insertTemplate" 
+            parameterType="com.hmdm.plugins.settings.model.ConfigTemplate"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO plugin_settings_templates
+            (customer_id, name, description, config_type, config_data, created_at)
+        VALUES
+            (#{customerId}, #{name}, #{description}, #{configType}, #{configData}, #{createdAt})
+    </insert>
+
+    <!-- Обновление шаблона -->
+    <update id="updateTemplate" 
+            parameterType="com.hmdm.plugins.settings.model.ConfigTemplate">
+        UPDATE plugin_settings_templates
+        SET name = #{name},
+            description = #{description},
+            config_data = #{configData},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+        AND customer_id = #{customerId}
+    </update>
+
+    <!-- Удаление шаблона -->
+    <delete id="deleteTemplate" parameterType="long">
+        DELETE FROM plugin_settings_templates
+        WHERE id = #{id}
+        AND customer_id = #{customerId}
+    </delete>
+
+</mapper>

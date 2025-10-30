@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DeviceLocationMapper">
+
+    <insert id="insertLocation" parameterType="com.hmdm.plugins.devicetracker.model.DeviceLocation">
+        INSERT INTO plugin_devicetracker_locations 
+        (deviceId, latitude, longitude, accuracy, speed, battery, timestamp, address)
+        VALUES 
+        (#{deviceId}, #{latitude}, #{longitude}, #{accuracy}, #{speed}, #{battery}, #{timestamp}, #{address})
+        ON CONFLICT (deviceId) DO UPDATE SET
+            latitude = EXCLUDED.latitude,
+            longitude = EXCLUDED.longitude,
+            accuracy = EXCLUDED.accuracy,
+            speed = EXCLUDED.speed,
+            battery = EXCLUDED.battery,
+            timestamp = EXCLUDED.timestamp,
+            address = EXCLUDED.address
+    </insert>
+
+    <insert id="insertHistory" parameterType="com.hmdm.plugins.devicetracker.model.DeviceLocation">
+        INSERT INTO plugin_devicetracker_history 
+        (deviceId, latitude, longitude, accuracy, speed, battery, timestamp, address)
+        VALUES 
+        (#{deviceId}, #{latitude}, #{longitude}, #{accuracy}, #{speed}, #{battery}, #{timestamp}, #{address})
+    </insert>
+
+    <select id="getLastLocation" parameterType="long" resultType="com.hmdm.plugins.devicetracker.model.DeviceLocation">
+        SELECT * FROM plugin_devicetracker_locations
+        WHERE deviceId = #{deviceId}
+    </select>
+
+    <select id="getLocationHistory" parameterType="map" resultType="com.hmdm.plugins.devicetracker.model.DeviceLocation">
+        SELECT * FROM plugin_devicetracker_history
+        WHERE deviceId = #{deviceId}
+        AND timestamp BETWEEN #{from} AND #{to}
+        ORDER BY timestamp DESC
+    </select>
+
+    <delete id="cleanupHistory" parameterType="date">
+        DELETE FROM plugin_devicetracker_history
+        WHERE timestamp &lt; #{cutoffDate}
+    </delete>
+
+</mapper>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="DeviceLocationMapper">
+    <!-- Добавляем новое местоположение в текущую таблицу -->
+    <insert id="insertLocation" parameterType="com.hmdm.plugins.devicetracker.model.DeviceLocation">
+        INSERT INTO plugin_devicetracker_locations 
+            (device_id, lat, lon, timestamp, accuracy, provider, speed, course, altitude, customer_id)
+        VALUES 
+            (#{deviceId}, #{lat}, #{lon}, #{timestamp}, #{accuracy}, #{provider}, 
+             #{speed}, #{course}, #{altitude}, #{customerId})
+    </insert>
+
+    <!-- Добавляем местоположение в историю -->
+    <insert id="insertHistory" parameterType="com.hmdm.plugins.devicetracker.model.DeviceLocation">
+        INSERT INTO plugin_devicetracker_history 
+            (device_id, lat, lon, timestamp, accuracy, provider, speed, course, altitude, customer_id)
+        VALUES 
+            (#{deviceId}, #{lat}, #{lon}, #{timestamp}, #{accuracy}, #{provider}, 
+             #{speed}, #{course}, #{altitude}, #{customerId})
+    </insert>
+
+    <!-- Получаем последнее местоположение устройства -->
+    <select id="getLastLocation" parameterType="long" 
+            resultType="com.hmdm.plugins.devicetracker.model.DeviceLocation">
+        SELECT * FROM plugin_devicetracker_locations
+        WHERE device_id = #{deviceId}
+        AND customer_id = #{customerId}
+    </select>
+
+    <!-- Получаем историю за период -->
+    <select id="getLocationHistory" parameterType="map" 
+            resultType="com.hmdm.plugins.devicetracker.model.DeviceLocation">
+        SELECT * FROM plugin_devicetracker_history
+        WHERE device_id = #{deviceId}
+        AND customer_id = #{customerId}
+        AND timestamp BETWEEN #{from} AND #{to}
+        ORDER BY timestamp ASC
+    </select>
+
+    <!-- Очищаем старую историю -->
+    <delete id="cleanupHistory" parameterType="date">
+        DELETE FROM plugin_devicetracker_history
+        WHERE timestamp &lt; #{cutoffDate}
+        AND customer_id = #{customerId}
+    </delete>
+
+    <!-- Добавляем архивную запись -->
+    <insert id="insertArchive" parameterType="com.hmdm.plugins.devicetracker.model.DeviceLocationArchive">
+        INSERT INTO plugin_devicetracker_archive
+            (device_id, year, month, data, compressed, points_count, created_at, customer_id)
+        VALUES 
+            (#{deviceId}, #{year}, #{month}, #{data}, #{compressed}, #{pointsCount}, 
+             #{createdAt}, #{customerId})
+    </insert>
+
+    <!-- Получаем архивы за период -->
+    <select id="getArchives" parameterType="map" 
+            resultType="com.hmdm.plugins.devicetracker.model.DeviceLocationArchive">
+        SELECT * FROM plugin_devicetracker_archive
+        WHERE device_id = #{deviceId}
+        AND customer_id = #{customerId}
+        AND (year * 100 + month) BETWEEN 
+            (EXTRACT(YEAR FROM #{from})::int * 100 + EXTRACT(MONTH FROM #{from})::int)
+        AND (EXTRACT(YEAR FROM #{to})::int * 100 + EXTRACT(MONTH FROM #{to})::int)
+        ORDER BY year ASC, month ASC
+    </select>
+
+    <!-- Удаляем диапазон из истории -->
+    <delete id="deleteHistoryRange" parameterType="map">
+        DELETE FROM plugin_devicetracker_history
+        WHERE device_id = #{deviceId}
+        AND customer_id = #{customerId}
+        AND timestamp BETWEEN #{from} AND #{to}
+    </delete>
+
+    <!-- Получаем список устройств с данными за месяц -->
+    <select id="getDevicesWithHistory" parameterType="date" resultType="long">
+        SELECT DISTINCT device_id 
+        FROM plugin_devicetracker_history
+        WHERE customer_id = #{customerId}
+        AND EXTRACT(YEAR FROM timestamp) = EXTRACT(YEAR FROM #{monthDate})
+        AND EXTRACT(MONTH FROM timestamp) = EXTRACT(MONTH FROM #{monthDate})
+    </select>
+</mapper>

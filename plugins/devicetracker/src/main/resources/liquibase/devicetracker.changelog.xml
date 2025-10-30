@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet id="plugin_devicetracker_001" author="devicetracker">
+        <!-- Таблица для текущих местоположений -->
+        <createTable tableName="plugin_devicetracker_locations">
+            <column name="deviceId" type="bigint">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="latitude" type="double">
+                <constraints nullable="false"/>
+            </column>
+            <column name="longitude" type="double">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accuracy" type="double"/>
+            <column name="speed" type="double"/>
+            <column name="battery" type="int"/>
+            <column name="timestamp" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address" type="varchar(500)"/>
+        </createTable>
+
+        <!-- Таблица для истории местоположений -->
+        <createTable tableName="plugin_devicetracker_history">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="deviceId" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="latitude" type="double">
+                <constraints nullable="false"/>
+            </column>
+            <column name="longitude" type="double">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accuracy" type="double"/>
+            <column name="speed" type="double"/>
+            <column name="battery" type="int"/>
+            <column name="timestamp" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address" type="varchar(500)"/>
+        </createTable>
+
+        <!-- Таблица настроек плагина -->
+        <createTable tableName="plugin_devicetracker_settings">
+            <column name="customerId" type="bigint">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="updateInterval" type="int" defaultValue="300">
+                <constraints nullable="false"/>
+            </column>
+            <column name="retentionDays" type="int" defaultValue="30">
+                <constraints nullable="false"/>
+            </column>
+            <column name="minAccuracy" type="double" defaultValue="100">
+                <constraints nullable="false"/>
+            </column>
+            <column name="minDistance" type="double" defaultValue="50">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Индексы -->
+        <createIndex tableName="plugin_devicetracker_history" indexName="idx_devicetracker_history_device">
+            <column name="deviceId"/>
+        </createIndex>
+        <createIndex tableName="plugin_devicetracker_history" indexName="idx_devicetracker_history_timestamp">
+            <column name="timestamp"/>
+        </createIndex>
+
+        <!-- Таблица для долгосрочного архива -->
+        <createTable tableName="plugin_devicetracker_archive">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="deviceId" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="month" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data" type="bytea">
+                <constraints nullable="false"/>
+            </column>
+            <column name="compressed" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="points_count" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Индекс для быстрого поиска архивных данных -->
+        <createIndex tableName="plugin_devicetracker_archive" indexName="idx_devicetracker_archive_device_date">
+            <column name="deviceId"/>
+            <column name="year"/>
+            <column name="month"/>
+        </createIndex>
+
+        <!-- Внешние ключи -->
+        <addForeignKeyConstraint baseTableName="plugin_devicetracker_locations"
+                                baseColumnNames="deviceId"
+                                constraintName="fk_devicetracker_locations_device"
+                                referencedTableName="devices"
+                                referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="plugin_devicetracker_history"
+                                baseColumnNames="deviceId"
+                                constraintName="fk_devicetracker_history_device"
+                                referencedTableName="devices"
+                                referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="plugin_devicetracker_settings"
+                                baseColumnNames="customerId"
+                                constraintName="fk_devicetracker_settings_customer"
+                                referencedTableName="customers"
+                                referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="plugin_devicetracker_archive"
+                                baseColumnNames="deviceId"
+                                constraintName="fk_devicetracker_archive_device"
+                                referencedTableName="devices"
+                                referencedColumnNames="id"/>
+    </changeSet>
+</databaseChangeLog>

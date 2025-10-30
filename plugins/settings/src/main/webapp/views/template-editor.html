@@ -1,0 +1,156 @@
+<div class="template-editor">
+    <!-- Шапка редактора -->
+    <div class="editor-header">
+        <div class="template-info">
+            <div class="form-group">
+                <input type="text" class="form-control input-lg" ng-model="template.name" 
+                       placeholder="Название шаблона">
+            </div>
+            <div class="form-group">
+                <textarea class="form-control" ng-model="template.description" 
+                          placeholder="Описание шаблона" rows="2"></textarea>
+            </div>
+        </div>
+        <div class="template-actions">
+            <button class="btn btn-success" ng-click="saveTemplate()">
+                <i class="fa fa-save"></i> Сохранить
+            </button>
+            <button class="btn btn-default" ui-sref="templates.list">
+                <i class="fa fa-times"></i> Отмена
+            </button>
+        </div>
+    </div>
+
+    <!-- Основные настройки -->
+    <div class="editor-main">
+        <div class="row">
+            <div class="col-md-3">
+                <!-- Общие параметры -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Общие параметры</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" ng-model="template.active">
+                                Шаблон активен
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Режим применения</label>
+                            <select class="form-control" ng-model="template.applyMode">
+                                <option value="OVERRIDE">Заменить существующие настройки</option>
+                                <option value="MERGE">Объединить с существующими</option>
+                                <option value="IF_NOT_SET">Применить только новые</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Применение шаблона -->
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Применение шаблона</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <label>Группы устройств</label>
+                            <select multiple class="form-control" ng-model="template.groupIds">
+                                <option ng-repeat="group in groups" value="{{group.id}}">
+                                    {{group.name}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Конфигурации</label>
+                            <select multiple class="form-control" ng-model="template.configurationIds">
+                                <option ng-repeat="config in configurations" value="{{config.id}}">
+                                    {{config.name}}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <!-- Настройки по категориям -->
+                <uib-tabset>
+                    <uib-tab ng-repeat="(key, category) in categories" heading="{{category.name}}">
+                        <div class="settings-grid">
+                            <div class="setting-row" ng-repeat="setting in category.settings">
+                                <div class="setting-header">
+                                    <label>
+                                        {{setting.description}}
+                                        <input type="checkbox" ng-model="template.settings[$index].mandatory">
+                                    </label>
+                                </div>
+                                <div class="setting-body">
+                                    <!-- Различные типы настроек -->
+                                    <div ng-switch="setting.valueType">
+                                        <!-- Переключатель -->
+                                        <div ng-switch-when="BOOLEAN">
+                                            <div class="btn-group">
+                                                <label class="btn btn-default" 
+                                                       ng-model="template.settings[$index].value" 
+                                                       uib-btn-radio="'true'">Вкл</label>
+                                                <label class="btn btn-default" 
+                                                       ng-model="template.settings[$index].value" 
+                                                       uib-btn-radio="'false'">Выкл</label>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Числовое значение -->
+                                        <div ng-switch-when="NUMERIC">
+                                            <input type="number" class="form-control" 
+                                                   ng-model="template.settings[$index].value">
+                                        </div>
+                                        
+                                        <!-- Выбор из списка -->
+                                        <div ng-switch-when="ENUM">
+                                            <select class="form-control" 
+                                                    ng-model="template.settings[$index].value">
+                                                <option ng-repeat="option in setting.options" 
+                                                        value="{{option.value}}">
+                                                    {{option.label}}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Текстовое значение по умолчанию -->
+                                        <div ng-switch-default>
+                                            <input type="text" class="form-control" 
+                                                   ng-model="template.settings[$index].value">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Валидация -->
+                                    <div class="setting-validation" ng-if="template.settings[$index].value">
+                                        <select class="form-control" 
+                                                ng-model="template.settings[$index].validationRule">
+                                            <option value="NONE">Без проверки</option>
+                                            <option value="NUMERIC">Число</option>
+                                            <option value="BOOLEAN">Логическое</option>
+                                            <option value="EMAIL">Email</option>
+                                            <option value="IP_ADDRESS">IP адрес</option>
+                                            <option value="URL">URL</option>
+                                            <option value="REGEX">Регулярное выражение</option>
+                                        </select>
+                                        <input type="text" class="form-control" 
+                                               ng-if="template.settings[$index].validationRule === 'REGEX'"
+                                               ng-model="template.settings[$index].validationPattern"
+                                               placeholder="Регулярное выражение">
+                                        <input type="text" class="form-control"
+                                               ng-model="template.settings[$index].validationMessage"
+                                               placeholder="Сообщение об ошибке">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </uib-tab>
+                </uib-tabset>
+            </div>
+        </div>
+    </div>
+</div>

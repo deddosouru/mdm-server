@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+    <!-- Таблица настроек для устройств -->
+    <changeSet id="plugin-settings-1" author="admin">
+        <createTable tableName="plugin_settings_device_configs">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="device_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="customer_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="config_type" type="varchar(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="config_key" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="config_value" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(20)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+            <column name="applied_at" type="timestamp"/>
+            <column name="error_message" type="text"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="plugin_settings_device_configs"
+                                baseColumnNames="device_id"
+                                constraintName="fk_settings_device"
+                                referencedTableName="devices"
+                                referencedColumnNames="id"
+                                onDelete="CASCADE"/>
+                                
+        <createIndex tableName="plugin_settings_device_configs" indexName="idx_settings_device">
+            <column name="device_id"/>
+            <column name="config_type"/>
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Таблица шаблонов настроек -->
+    <changeSet id="plugin-settings-2" author="admin">
+        <createTable tableName="plugin_settings_templates">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="customer_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="text"/>
+            <column name="active" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="settings_json" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="apply_mode" type="varchar(20)" defaultValue="OVERRIDE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp"/>
+        </createTable>
+
+        <createIndex tableName="plugin_settings_templates" indexName="idx_settings_templates">
+            <column name="customer_id"/>
+            <column name="active"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Таблица связей шаблонов с устройствами -->
+    <changeSet id="plugin-settings-3" author="admin">
+        <createTable tableName="plugin_settings_template_devices">
+            <column name="template_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="device_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="plugin_settings_template_devices" 
+                      columnNames="template_id,device_id"/>
+                      
+        <addForeignKeyConstraint baseTableName="plugin_settings_template_devices"
+                                baseColumnNames="template_id"
+                                constraintName="fk_template_device_template"
+                                referencedTableName="plugin_settings_templates"
+                                referencedColumnNames="id"
+                                onDelete="CASCADE"/>
+                                
+        <addForeignKeyConstraint baseTableName="plugin_settings_template_devices"
+                                baseColumnNames="device_id"
+                                constraintName="fk_template_device_device"
+                                referencedTableName="devices"
+                                referencedColumnNames="id"
+                                onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Таблица связей шаблонов с группами -->
+    <changeSet id="plugin-settings-4" author="admin">
+        <createTable tableName="plugin_settings_template_groups">
+            <column name="template_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="plugin_settings_template_groups" 
+                      columnNames="template_id,group_id"/>
+                      
+        <addForeignKeyConstraint baseTableName="plugin_settings_template_groups"
+                                baseColumnNames="template_id"
+                                constraintName="fk_template_group_template"
+                                referencedTableName="plugin_settings_templates"
+                                referencedColumnNames="id"
+                                onDelete="CASCADE"/>
+                                
+        <addForeignKeyConstraint baseTableName="plugin_settings_template_groups"
+                                baseColumnNames="group_id"
+                                constraintName="fk_template_group_group"
+                                referencedTableName="groups"
+                                referencedColumnNames="id"
+                                onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Таблица связей шаблонов с конфигурациями -->
+    <changeSet id="plugin-settings-5" author="admin">
+        <createTable tableName="plugin_settings_template_configurations">
+            <column name="template_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="configuration_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="plugin_settings_template_configurations" 
+                      columnNames="template_id,configuration_id"/>
+                      
+        <addForeignKeyConstraint baseTableName="plugin_settings_template_configurations"
+                                baseColumnNames="template_id"
+                                constraintName="fk_template_config_template"
+                                referencedTableName="plugin_settings_templates"
+                                referencedColumnNames="id"
+                                onDelete="CASCADE"/>
+                                
+        <addForeignKeyConstraint baseTableName="plugin_settings_template_configurations"
+                                baseColumnNames="configuration_id"
+                                constraintName="fk_template_config_configuration"
+                                referencedTableName="configurations"
+                                referencedColumnNames="id"
+                                onDelete="CASCADE"/>
+    </changeSet>
+
+</databaseChangeLog>

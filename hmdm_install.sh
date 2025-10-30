@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Headwind MDM installer script
-# Tested on Ubuntu Linux 18.04 - 24.04, Ubuntu 22.04 is recommended
+# Tested on Ubuntu Linux 18.04 - 24.04.3 LTS, Ubuntu 24.04.3 is recommended
 #
 REPOSITORY_BASE=https://h-mdm.com/files
 CLIENT_VERSION=5.19
@@ -69,10 +69,10 @@ if [ ! -d "./install" ]; then
     exit 1
 fi
 
-# Check if there's aapt tool installed
-if ! which aapt > /dev/null; then
+# Check if there's aapt/aapt2 tool installed
+if ! which aapt > /dev/null && ! which aapt2 > /dev/null; then
     echo "Android App Packaging Tool is not installed!"
-    install_soft aapt
+    install_soft aapt2
 fi
 
 # Check PostgreSQL installation
@@ -83,7 +83,7 @@ if ! which psql > /dev/null; then
 fi
 
 # Check if tomcat user exists
-getent passwd $TOMCAT_USER > /dev/null
+getent passwd $TOMCAT_USER >/dev/null
 if [ "$?" -ne 0 ]; then
     # Try tomcat8
     TOMCAT_USER="tomcat8"
@@ -96,32 +96,11 @@ if [ "$?" -ne 0 ]; then
     fi
 fi
 
-# Check for Tomcat version in Ubuntu 20.04
-OUTDATED_TOMCAT=$(/usr/share/tomcat9/bin/version.sh 2>&1 | grep "Server number" | grep "9.0.31")
-if [ ! -z "$OUTDATED_TOMCAT" ]; then
-    echo "Tomcat $OUTDATED_TOMCAT requires updating!"
-    read -e -p "Update it now [Y/n]?: " -i "Y" REPLY
-    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
-        # This clause is only for tomcat 9 so do not bother for the major version
-        VERSION=9.0.40
-        wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.40/bin/apache-tomcat-${VERSION}.tar.gz
-        tar -zxf apache-tomcat-${VERSION}.tar.gz
-        cd apache-tomcat-${VERSION}
-        chmod a+x bin
-        chmod a+x lib
-        chmod -R a+r bin
-        chmod -R a+r lib
-        chmod a+x bin/*.sh
-        mv /usr/share/tomcat9/bin /usr/share/tomcat9/bin~
-        mv /usr/share/tomcat9/lib /usr/share/tomcat9/lib~
-        cp -r bin /usr/share/tomcat9
-        cp -r lib /usr/share/tomcat9
-        service tomcat9 restart
-	cd ..
-	rm -rf apache-tomcat-${VERSION}
-	rm -f apache-tomcat-${VERSION}.tar.gz
-        apt-mark hold tomcat9
-    fi
+# Check Tomcat version
+TOMCAT_VERSION=$(/usr/share/tomcat10/bin/version.sh 2>&1 | grep "Server number")
+if [ ! -z "$TOMCAT_VERSION" ]; then
+    echo "Current Tomcat version: $TOMCAT_VERSION"
+    # В Ubuntu 24.04 используется Tomcat 10, дополнительное обновление не требуется
 fi
 
 # Search for the WAR
@@ -208,7 +187,7 @@ echo "File storage setup"
 echo "=================="
 echo "Please choose where the files uploaded to Headwind MDM will be stored"
 echo "If the directory doesn't exist, it will be created"
-echo "##### FOR TOMCAT 9, USE SANDBOXED DIR: /var/lib/tomcat9/work #####"
+echo "##### FOR TOMCAT 10, USE SANDBOXED DIR: /var/lib/tomcat10/work #####"
 echo
 
 read -e -p "Headwind MDM storage directory [$DEFAULT_LOCATION]: " -i "$DEFAULT_LOCATION" LOCATION
@@ -408,7 +387,7 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
     read -e -p "Update Tomcat config automatically [Y/n]?: " -i "Y" REPLY
     if [[ "$REPLY" =~ ^[Yy]$ ]]; then
         cp $TOMCAT_HOME/conf/server.xml $TOMCAT_HOME/conf/server.xml~
-	# EPIC MAGIC!!!
+        # EPIC MAGIC!!!
         sed -z -e "s^<\!\-\-\n    <Connector port=\"8443\" protocol=\"org.apache.coyote.http11.Http11NioProtocol\"^<Connector port=\"8443\" protocol=\"org.apache.coyote.http11.Http11NioProtocol\"^" -e "s^\-\->\n    <\!\-\- Define an SSL/TLS HTTP/1.1 Connector on port 8443 with HTTP/2^<\!\-\- Define an SSL/TLS HTTP/1.1 Connector on port 8443 with HTTP/2^" -e "s^certificateKeystoreFile=\"conf/localhost-rsa.jks\"^certificateKeystoreFile=\"/var/lib/tomcat9/ssl/$BASE_DOMAIN.jks\" certificateKeystorePassword=\"123456\"^" $TOMCAT_HOME/conf/server.xml~ > $TOMCAT_HOME/conf/server.xml
         CERTBOT_VERSION=`certbot --version | awk '{print $2}' | awk '{n=split($1,A,"."); print A[1]}'`
         if [ "$CERTBOT_VERSION" != "" ] && [ "$CERTBOT_VERSION" -ge "2" ]; then
@@ -427,7 +406,7 @@ if [[ "$REPLY" =~ ^[Yy]$ ]]; then
     echo "https://$BASE_DOMAIN:8443$BASE_PATH"
     echo
     echo "Notice: if Tomcat starts slowly:"
-    echo "Open a file /etc/java-11-openjdk/security/java.security"
+    echo "Open a file /etc/java-17-openjdk/security/java.security"
     echo "Replace securerandom.source=file:/dev/random"
     echo "to securerandom.source=file:/dev/urandom"
     echo "and restart Tomcat."
@@ -465,19 +444,109 @@ if [ -z "$IPTABLES_HTTPS_SET" ]; then
     fi
 fi
 
+# Install Device Tracker plugin dependencies
+echo "Installing Device Tracker plugin dependencies..."
+NPM_DIR="$LOCATION/plugins/devicetracker/webapp"
+if [ ! -d "$NPM_DIR" ]; then
+    mkdir -p "$NPM_DIR"
+fi
+
+# Проверяем наличие npm
+if ! which npm > /dev/null; then
+    echo "Installing Node.js and npm..."
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    apt-get install -y nodejs
+fi
+
+# Устанавливаем зависимости для фронтенда
+cd "$NPM_DIR"
+cat > package.json << EOF
+{
+  "name": "devicetracker-plugin",
+  "version": "1.0.0",
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "@types/leaflet": "^1.9.7"
+  }
+}
+EOF
+
+npm install
+chown -R $TOMCAT_USER:$TOMCAT_USER "$NPM_DIR"
+
+# Копируем файлы Leaflet в webapp
+mkdir -p "$NPM_DIR/lib"
+cp -r node_modules/leaflet/dist/* "$NPM_DIR/lib/"
+
+# Создаем скрипт для добавления CSS и JS в index.html
+cat > "$LOCATION/plugins/devicetracker/insert-dependencies.sh" << 'EOF'
+#!/bin/bash
+INDEX_FILE="$TOMCAT_HOME/webapps/$TOMCAT_DEPLOY_PATH/index.html"
+if [ -f "$INDEX_FILE" ]; then
+    # Добавляем CSS перед закрывающим тегом </head>
+    sed -i 's|</head>|    <link rel="stylesheet" href="plugins/devicetracker/webapp/lib/leaflet.css" />\n</head>|' "$INDEX_FILE"
+    
+    # Добавляем JS перед закрывающим тегом </body>
+    sed -i 's|</body>|    <script src="plugins/devicetracker/webapp/lib/leaflet.js"></script>\n</body>|' "$INDEX_FILE"
+fi
+EOF
+
+chmod +x "$LOCATION/plugins/devicetracker/insert-dependencies.sh"
+chown $TOMCAT_USER:$TOMCAT_USER "$LOCATION/plugins/devicetracker/insert-dependencies.sh"
+
+# Создаем systemd сервис для автоматической установки зависимостей при обновлении
+cat > /etc/systemd/system/hmdm-devicetracker-deps.service << EOF
+[Unit]
+Description=Headwind MDM Device Tracker Dependencies Installer
+After=tomcat10.service
+
+[Service]
+Type=oneshot
+ExecStart=$LOCATION/plugins/devicetracker/insert-dependencies.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable hmdm-devicetracker-deps
+systemctl start hmdm-devicetracker-deps
+
+echo "Device Tracker plugin dependencies installed successfully"
+
 # Download required files
 read -e -p "Move required APKs from h-mdm.com to your server [Y/n]?: " -i "Y" REPLY
 if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+    # Проверяем наличие wget
+    if ! which wget > /dev/null; then
+        apt update && apt install -y wget
+    fi
+    
     FILES=$(echo "SELECT url FROM applicationversions WHERE url IS NOT NULL" | psql $PSQL_CONNSTRING 2>/dev/null | tail -n +3 | head -n -2)
-    CURRENT_DIR=$(pwd)
-    cd $LOCATION/files
-    for FILE in $FILES; do
-        echo "Downloading $FILE..."
-	wget $FILE
-    done
-    chown $TOMCAT_USER:$TOMCAT_USER *
-    echo "UPDATE applicationversions SET url=REPLACE(url, 'https://h-mdm.com', '$PROTOCOL://$BASE_HOST$BASE_PATH') WHERE url IS NOT NULL" | psql $PSQL_CONNSTRING >/dev/null 2>&1
-    cd $CURRENT_DIR
+    if [ -z "$FILES" ]; then
+        echo "No files found to download"
+    else
+        CURRENT_DIR=$(pwd)
+        cd $LOCATION/files || exit 1
+        
+        # Загружаем файлы с обработкой ошибок
+        for FILE in $FILES; do
+            if [ ! -z "$FILE" ]; then
+                echo "Downloading $FILE..."
+                wget --no-check-certificate $FILE || echo "Warning: Failed to download $FILE"
+            fi
+        done
+        
+        # Проверяем наличие файлов перед chown
+        if ls * 1> /dev/null 2>&1; then
+            chown $TOMCAT_USER:$TOMCAT_USER *
+        fi
+        
+        # Обновляем URLs в базе данных
+        echo "UPDATE applicationversions SET url=REPLACE(url, 'https://h-mdm.com', '$PROTOCOL://$BASE_HOST$BASE_PATH') WHERE url IS NOT NULL" | psql $PSQL_CONNSTRING >/dev/null 2>&1
+        cd $CURRENT_DIR || exit 1
+    fi
 fi
 
 echo
